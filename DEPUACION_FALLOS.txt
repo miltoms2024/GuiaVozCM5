@@ -1,0 +1,16 @@
+# SOLUCIÓN DE FALLO DE CARGA DE EXPO (CONEXIÓN/RED)
+
+# DIAGNÓSTICO:
+# - El código de 'Hola Mundo' o el código simple NO cargan en el móvil,
+# - PERO NO hay errores en la terminal (Metro Bundler).
+# - Esto indica un BLOQUEO DE RED LOCAL (Firewall) que impide al PC enviar el paquete.
+
+# ACCIÓN CORRECTIVA: VERIFICAR FIREWALL DE WINDOWS
+
+# 1. Abrir: Panel de Control > Sistema y Seguridad > Firewall de Windows Defender.
+# 2. Ir a: "Permitir una aplicación o característica a través de Firewall...".
+# 3. BUSCAR: "Node.js JavaScript runtime" o cualquier entrada relacionada con Node.
+# 4. ASEGURAR: Que la casilla "Privada" esté MARCADA (o ambas "Privada" y "Pública").
+
+# NOTA ADICIONAL: Si el fallo persiste, probar la conexión MANUAL en Expo Go
+# (escribiendo la IP:PUERTA, ej: 192.168.1.128:8081, en lugar de escanear el QR).

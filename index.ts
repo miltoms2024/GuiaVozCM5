@@ -1,8 +1,8 @@
+// index.ts
+
 import { registerRootComponent } from 'expo';
+import App from './App'; // Importa el componente App de tu App.tsx
 
-import App from './App';
-
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
+// Registra el componente principal de la aplicación.
+// Esto es lo que le dice a Expo qué cargar.
 registerRootComponent(App);
