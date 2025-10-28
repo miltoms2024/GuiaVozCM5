@@ -5,6 +5,20 @@ import { useNavigation } from '@react-navigation/native';
 import { NavigationProps } from '../navigation/AppNavigator'; 
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Importación de Iconos
 
+/**
+ * Convierte segundos totales a formato MM:SS
+ */
+const formatTime = (totalSeconds: number): string => {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  // Garantiza que sean dos dígitos (ej. 05 en lugar de 5)
+  const pad = (num: number) => num.toString().padStart(2, '0');
+
+  return `${pad(minutes)}:${pad(seconds)}`;
+};
+
+
 // Mensajes de la Guía
 const INITIAL_GUIDE_TEXT = 
   "Iniciando la fase de instrucción CM5. Los pasos se leerán en voz alta. Pulse 'INICIAR GUÍA' para comenzar.";
@@ -24,6 +38,11 @@ const GuideScreen = () => {
   
   // LÓGICA DE SILENCIO
   const [isMuted, setIsMuted] = React.useState(false); 
+
+  // LÓGICA DE CRONÓMETRO
+  const [seconds, setSeconds] = React.useState(0);
+  const [isRunning, setIsRunning] = React.useState(false);
+  const [showTimer, setShowTimer] = React.useState(false); // CONTROL DE VISIBILIDAD
 
   const toggleMute = () => {
     Speech.stop(); 
@@ -49,6 +68,14 @@ const GuideScreen = () => {
       onError: () => setIsSpeaking(false)
     });
   };
+
+  // FUNCIÓN PARA PAUSAR/REANUDAR EL CRONÓMETRO
+  const toggleTimerPause = () => {
+    // Solo permitimos pausar/reanudar si la guía está en curso (Paso 1, 2, 3...)
+    if (currentStep > 0 && currentStep <= GUIDE_STEPS.length) {
+      setIsRunning(prev => !prev);
+    }
+  };
   
   // FUNCIÓN PARA EL MENÚ DE OPCIONES 
   const handleMenu = () => {
@@ -59,6 +86,20 @@ const GuideScreen = () => {
       "Menú de Opciones",
       "Selecciona una acción:",
       [
+        // NUEVO ITEM: PAUSAR/REANUDAR
+        {
+          text: isRunning ? "⏸️ Pausar Cronómetro" : "▶️ Reanudar Cronómetro", 
+          onPress: () => {
+            toggleTimerPause();
+          },
+        },
+        // NUEVO ITEM: MOSTRAR/OCULTAR CRONÓMETRO
+        {
+          text: showTimer ? "⏱️ Ocultar Cronómetro" : "⏱️ Mostrar Cronómetro", 
+          onPress: () => {
+            setShowTimer(prev => !prev);
+          },
+        },
         {
           text: "🔁 Repetir Instrucción",
           onPress: () => {
@@ -88,6 +129,7 @@ const GuideScreen = () => {
       setGuideText(finalMessage);
       speak(finalMessage);
       setCurrentStep(GUIDE_STEPS.length + 1); 
+      setIsRunning(false); // DETENER CRONÓMETRO AL FINALIZAR
     }
   };
 
@@ -99,7 +141,15 @@ const GuideScreen = () => {
     
     if (currentStep > GUIDE_STEPS.length) {
       setCurrentStep(0);
+      setSeconds(0); // Reinicia el contador de tiempo
+      setIsRunning(false); // Detiene el cronómetro
       return; 
+    }
+    
+    // Si estamos en el Paso 0 y vamos a iniciar, aseguramos el inicio del cronómetro
+    if (currentStep === 0) {
+      setIsRunning(true);
+      setSeconds(0); // Asegura que empieza en 0 si estamos iniciando
     }
     
     const nextIndex = currentStep + 1;
@@ -119,6 +169,7 @@ const GuideScreen = () => {
       setCurrentStep(0);
       setGuideText(INITIAL_GUIDE_TEXT);
       speak(INITIAL_GUIDE_TEXT);
+      setIsRunning(false); // Detenemos el cronómetro al volver al inicio
     }
   };
 
@@ -135,9 +186,36 @@ const GuideScreen = () => {
       Speech.stop();
     };
   }, []); 
+
+  // EFECTO 3: Controla el intervalo de tiempo (cronómetro)
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    // El cronómetro corre solo si estamos en un paso (currentStep > 0) y no en el final.
+    if (isRunning && currentStep > 0 && currentStep <= GUIDE_STEPS.length) {
+      interval = setInterval(() => {
+        setSeconds(prevSeconds => prevSeconds + 1);
+      }, 1000);
+    } else if (interval) {
+      clearInterval(interval);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isRunning, currentStep]);
   
   const isFinalStep = currentStep > GUIDE_STEPS.length;
   
+  const headerText = 
+    currentStep === 0 
+      ? "FASE DE INSTRUCCIÓN"
+      : isFinalStep 
+      ? "GUÍA FINALIZADA" // Mensaje para el estado de guía completada
+      : `Paso ${currentStep} de ${GUIDE_STEPS.length}`; // "Paso 1 de 3", "Paso 2 de 3", etc.
+
   const buttonText = currentStep === 0 ? "INICIAR GUÍA" : 
                        isFinalStep ? "REINICIAR GUÍA" : 
                        "AVANZAR (PASO COMPLETADO)";
@@ -146,10 +224,18 @@ const GuideScreen = () => {
       
       {/* FILA SUPERIOR: TÍTULO y BOTONES */}
       <View style={styles.header}>
-        <Text style={styles.phaseTitle}>FASE DE INSTRUCCIÓN</Text>
+        <Text style={styles.phaseTitle}>{headerText}</Text>
         
         {/* CONTENEDOR DE BOTONES (A LA DERECHA) */}
         <View style={styles.headerButtons}> 
+          
+          {/* CRONÓMETRO (Solo se muestra si showTimer es true) */}
+          {showTimer && (
+            <View style={styles.timerBox}>
+              <Text style={styles.timerText}>{formatTime(seconds)}</Text>
+            </View>
+          )}
+
           {/* BOTÓN DE SILENCIO/ACTIVAR */}
           <TouchableOpacity onPress={toggleMute} style={styles.menuButton}>
             <MaterialCommunityIcons 
@@ -176,7 +262,7 @@ const GuideScreen = () => {
         
         {/* BOTÓN IZQUIERDO: RETROCEDER (Flecha) */}
         <TouchableOpacity 
-          style={styles.arrowButton} // Usa el estilo base, sin errores de referencia
+          style={styles.arrowButton} 
           onPress={handlePrevStep} 
           disabled={currentStep === 0 || isSpeaking || isFinalStep} 
         >
@@ -194,7 +280,7 @@ const GuideScreen = () => {
         
         {/* BOTÓN DERECHO: AVANZAR (Flecha) */}
         <TouchableOpacity 
-          style={styles.arrowButton} // Usa el estilo base, sin errores de referencia
+          style={styles.arrowButton} 
           onPress={handleButtonPress} 
           disabled={isSpeaking || isFinalStep} 
         >
@@ -232,6 +318,20 @@ const styles = StyleSheet.create({
     color: '#FF4500',
     flexShrink: 1, 
     marginRight: 10,
+  },
+
+  // NUEVOS ESTILOS PARA EL CRONÓMETRO
+  timerBox: {
+    backgroundColor: '#333333', 
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 5,
+    marginRight: 10, // Separación del icono de silencio
+  },
+  timerText: {
+    color: '#00FF00', // Verde brillante para el tiempo
+    fontWeight: 'bold', 
+    fontSize: 18,
   },
   
   // Estilo único para el botón de menú y silencio
