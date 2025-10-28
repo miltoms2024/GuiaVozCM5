@@ -36,7 +36,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000', padding: 20, justifyContent: 'space-between' },
   mainContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 55, fontWeight: 'bold', color: '#FFFF00', marginBottom: 20 },
+  title: { fontSize: 55, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20 },
   subtitle: { fontSize: 25, color: '#FFFFFF', marginBottom: 80, textAlign: 'center' },
   startButton: { backgroundColor: '#007BFF', paddingHorizontal: 50, paddingVertical: 30, borderRadius: 12 },
   startButtonText: { color: '#FFFFFF', fontSize: 26, fontWeight: 'bold' },
