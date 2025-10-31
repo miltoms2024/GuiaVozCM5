@@ -42,20 +42,35 @@ const GuideScreen = () => {
         <View style={styles.header}>
           <Text style={styles.phaseTitle}>{logic.headerText}</Text>
           <View style={styles.headerButtons}> 
-            <TouchableOpacity onPress={() => logic.navigation.navigate('Home')} style={styles.menuButton}>
-              <MaterialCommunityIcons name="home" size={20} color="white" />
-            </TouchableOpacity>
-            {logic.showTimer && (
-              <View style={styles.timerBox}>
-                <Text style={styles.timerText}>{formatTime(logic.seconds)}</Text>
-              </View>
-            )}
-            <TouchableOpacity onPress={logic.toggleMute} style={styles.menuButton}>
-              <MaterialCommunityIcons name={logic.isMuted ? "volume-off" : "volume-high"} size={20} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={logic.handleMenu} style={styles.menuButton}>
-              <MaterialCommunityIcons name="menu" size={20} color="white" />
-            </TouchableOpacity>
+            {/** Selección segura de nombres de icono: usa 'arrow-*' si existe en el mapa de glifos, si no cae a 'chevron-*' */}
+            {(() => {
+              const glyphMap = (MaterialCommunityIcons as any).glyphMap || {};
+              const leftName = glyphMap['arrow-left'] ? 'arrow-left' : 'chevron-left';
+              const rightName = glyphMap['arrow-right'] ? 'arrow-right' : 'chevron-right';
+              const homeName = glyphMap['home'] ? 'home' : 'home-outline';
+              const menuName = glyphMap['menu'] ? 'menu' : 'dots-vertical';
+              const volOn = glyphMap['volume-high'] ? 'volume-high' : 'volume-high';
+              const volOff = glyphMap['volume-off'] ? 'volume-off' : 'volume-off';
+
+              return (
+                <>
+                  <TouchableOpacity onPress={() => logic.navigation.navigate('Home')} style={styles.menuButton}>
+                    <MaterialCommunityIcons name={homeName as any} size={20} color="white" />
+                  </TouchableOpacity>
+                  {logic.showTimer && (
+                    <View style={styles.timerBox}>
+                      <Text style={styles.timerText}>{formatTime(logic.seconds)}</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity onPress={logic.toggleMute} style={styles.menuButton}>
+                    <MaterialCommunityIcons name={logic.isMuted ? (volOff as any) : (volOn as any)} size={20} color="white" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={logic.handleMenu} style={styles.menuButton}>
+                    <MaterialCommunityIcons name={menuName as any} size={20} color="white" />
+                  </TouchableOpacity>
+                </>
+              );
+            })()}
           </View>
         </View>
         
@@ -77,7 +92,8 @@ const GuideScreen = () => {
             disabled={(logic.currentStepIndex === 0 && !logic.isFinalStep) || logic.isSpeaking} // BLOQUEADO SI ES INICIO O ESTÁ HABLANDO
             style={[styles.arrowButton, ((logic.currentStepIndex === 0 && !logic.isFinalStep) || logic.isSpeaking) && { opacity: 0.3 }]} // OPACIDAD SI ESTÁ BLOQUEADO
           >
-            <MaterialCommunityIcons name="arrow-left" size={30} color="white" />
+            {/* Cambio a chevrons por compatibilidad si faltan los iconos 'arrow-*' */}
+            <MaterialCommunityIcons name="chevron-left" size={30} color="white" />
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={logic.isFinalStep ? logic.resetGuide : () => logic.changeStep('next')}
@@ -93,7 +109,8 @@ const GuideScreen = () => {
             disabled={logic.isFinalStep || logic.isSpeaking} // BLOQUEADO SI ES FINAL O ESTÁ HABLANDO
             style={[styles.arrowButton, (logic.isFinalStep || logic.isSpeaking) && { opacity: 0.3 }]} // OPACIDAD SI ESTÁ BLOQUEADO
           >
-            <MaterialCommunityIcons name="arrow-right" size={30} color="white" />
+            {/* Cambio a chevrons por compatibilidad si faltan los iconos 'arrow-*' */}
+            <MaterialCommunityIcons name="chevron-right" size={30} color="white" />
           </TouchableOpacity>
         </View>
       </View>
