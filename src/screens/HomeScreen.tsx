@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NavigationProps } from '../navigation/AppNavigator';
 
 const APP_VERSION = "1.0.0";
-const CREATOR = "Desarrollado por [Tu Nombre/Empresa]";
+const CREATOR = "Desarrollado por [MR_Consulting]";
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProps>();
