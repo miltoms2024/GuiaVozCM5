@@ -1,9 +1,9 @@
-// Archivo: src/hooks/useGuideLogic.ts (FINAL Y CORREGIDO - Listo para pegar)
+// Archivo: src/hooks/useGuideLogic.ts (VERSIÓN ESTABLE Y CORREGIDA)
 
-import React from 'react'; // Revertimos a importación simple para evitar errores TS
+import React, { useCallback, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import type { RootStackParamList } from '../navigation/AppNavigator';
+import type { RootStackParamList } from '../navigation/AppNavigator'; 
 import * as Speech from 'expo-speech';
 
 // ----------------------------------------------------------------------
@@ -22,12 +22,12 @@ const guideSteps = [
 // ----------------------------------------------------------------------
 
 export const useGuideLogic = () => {
-    const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   // ESTADOS 
   const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
   const [guideText, setGuideText] = React.useState(guideSteps[0].text);
-  const [isSpeaking, setIsSpeaking] = React.useState(false); // ESTADO CRÍTICO
+  const [isSpeaking, setIsSpeaking] = React.useState(false); 
   const [isMuted, setIsMuted] = React.useState(false); 
   const [isMenuVisible, setIsMenuVisible] = React.useState(false); 
   const [seconds, setSeconds] = React.useState(0);
@@ -36,8 +36,8 @@ export const useGuideLogic = () => {
 
   const isFinalStep = currentStepIndex === guideSteps.length - 1;
 
-  // FUNCIÓN DE VOZ (LA MANTENEMOS PARA 'repeatInstruction')
-  const speak = React.useCallback((text: string) => {
+  // FUNCIÓN DE VOZ (Usando useCallback para evitar repeticiones)
+  const speak = useCallback((text: string) => {
     if (isMuted) return;
     Speech.stop();
     setIsSpeaking(true);
@@ -47,61 +47,46 @@ export const useGuideLogic = () => {
       rate: 0.9, 
       pitch: 1.0, 
       onDone: () => setIsSpeaking(false),
-      onError: (e) => {
-        console.error('Error al hablar:', e);
-        setIsSpeaking(false);
-      },
+      onError: () => setIsSpeaking(false),
     });
-    console.log('[speak] isMuted=', isMuted, 'text=', text);
   }, [isMuted]);
 
-  // EFECTO DE CRONÓMETRO (INTACTO)
-  React.useEffect(() => {
-        let interval: ReturnType<typeof setInterval> | null = null;
+  // EFECTO DE CRONÓMETRO (Corrección de tipado 'Timeout')
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
     if (isRunning) {
       interval = setInterval(() => setSeconds(prevSeconds => prevSeconds + 1), 1000);
     } else if (!isRunning && seconds !== 0) {
-            if (interval) clearInterval(interval);
+      if (interval) clearInterval(interval); 
     }
-    return () => { if (interval) clearInterval(interval); };
-  }, [isRunning, seconds]);
+    // CORRECCIÓN: el cleanup del useEffect debe limpiar el intervalo
+    return () => { if (interval) clearInterval(interval as NodeJS.Timeout); }; 
+  }, [isRunning]); 
 
-  // 🛑 EFECTO DE PASO DE GUÍA (CORREGIDO: Ahora llama a Speech.speak directamente)
-  React.useEffect(() => {
+  // 🛑 EFECTO DE PASO DE GUÍA (ESTABLE: Llama a 'speak' de forma controlada)
+  useEffect(() => {
     setGuideText(guideSteps[currentStepIndex].text);
     const textToSpeak = guideSteps[currentStepIndex].text;
 
-    // 1. Lógica de Voz (ESTABLE)
-    Speech.stop(); 
-    setIsSpeaking(false);
-
-    if (!isMuted) {
-        setIsSpeaking(true);
-        Speech.speak(textToSpeak, {
-            language: 'es-ES',
-            rate: 0.9, 
-            pitch: 1.0, 
-            onDone: () => setIsSpeaking(false), 
-            onError: () => setIsSpeaking(false),
-        });
-    }
+    // 1. Lógica de Voz
+    speak(textToSpeak);
     
-    // 2. Control del cronómetro (INTACTO)
+    // 2. Control del cronómetro
     if (currentStepIndex === 0 || isFinalStep) {
       setIsRunning(false); 
     } else {
       setIsRunning(true); 
     }
-    
-    // 3. Limpieza
-    return () => {
-        Speech.stop();
-    };
     
-// DEPENDENCIAS ESTABLES: No incluyen 'speak'
-  }, [currentStepIndex, isMuted, isFinalStep]); 
+    // 3. Limpieza
+    return () => {
+        Speech.stop();
+        setIsSpeaking(false);
+    };
+    
+  }, [currentStepIndex, isFinalStep, speak]); 
 
-  // FUNCIÓN PARA AVANZAR/RETROCEDER (INTACTA)
+  // FUNCIÓN PARA AVANZAR/RETROCEDER
   const changeStep = (direction: 'next' | 'prev') => {
     Speech.stop();
     setIsSpeaking(false);
@@ -113,13 +98,13 @@ export const useGuideLogic = () => {
     });
   };
 
-  // FUNCIÓN PARA PAUSAR/REANUDAR CRONÓMETRO (INTACTA)
+  // FUNCIÓN PARA PAUSAR/REANUDAR CRONÓMETRO
   const toggleTimerPause = () => {
     if (currentStepIndex === 0 || isFinalStep) return; 
     setIsRunning(prev => !prev);
   };
   
-  // FUNCIÓN PARA VOLVER AL INICIO DE LA GUÍA (INTACTA)
+  // FUNCIÓN PARA VOLVER AL INICIO DE LA GUÍA
   const resetGuide = () => {
     setCurrentStepIndex(0);
     setSeconds(0);
@@ -129,7 +114,7 @@ export const useGuideLogic = () => {
     setIsMenuVisible(false); 
   };
   
-  // LÓGICA DEL ENCABEZADO Y TEXTO (INTACTA)
+  // LÓGICA DEL ENCABEZADO Y TEXTO
   const headerText = isFinalStep 
     ? "GUÍA FINALIZADA" 
     : currentStepIndex === 0 
@@ -137,36 +122,33 @@ export const useGuideLogic = () => {
       : `Paso ${currentStepIndex} de ${guideSteps.length - 1}`;
 
 
-  // FUNCIÓN PARA MANEJAR EL MENÚ (INTACTA)
+  // FUNCIÓN PARA MANEJAR EL MENÚ
   const handleMenu = () => {
     Speech.stop();
     setIsSpeaking(false);
     setIsMenuVisible(true);
   };
   
-  // 🛑 FUNCIÓN PARA MUTE/UNMUTE (CORREGIDA: Ya no llama a 'speak')
+  // FUNCIÓN PARA MUTE/UNMUTE
   const toggleMute = () => {
       setIsMuted(prev => {
           if (!prev) Speech.stop();
-          console.log('[toggleMute] from=', isMuted, '=>', !isMuted);
-          // ELIMINAMOS la llamada a 'else speak(guideText);'
           return !prev;
       });
   };
   
-  // FUNCIÓN PARA REPETIR INSTRUCCIÓN (INTACTA)
+  // FUNCIÓN PARA REPETIR INSTRUCCIÓN
   const repeatInstruction = () => {
       speak(guideText);
   };
   
-  // Retorna todas las variables y funciones necesarias (INTACTA)
   return {
-    // ESTADOS Y DATOS (isSpeaking incluido)
+    // ESTADOS Y DATOS
     guideText, isFinalStep, isMuted, isMenuVisible, seconds, isRunning, showTimer, currentStepIndex, headerText, isSpeaking,
-    // Setters (para escribir)
+    // Setters
     setIsMenuVisible, setShowTimer,
     // Funciones de acción
-    toggleTimerPause, toggleMute, handleMenu, changeStep, resetGuide, repeatInstruction, speak,
+    toggleTimerPause, toggleMute, handleMenu, changeStep, resetGuide, repeatInstruction, 
     // Navegación
     navigation
   };

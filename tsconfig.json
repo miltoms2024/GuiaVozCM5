@@ -2,12 +2,10 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "target": "es2020",
-  "module": "es2020",
+    "module": "es2020",
     "jsx": "react-native",
-    "lib": [
-      "es2020"
-    ],
-  "moduleResolution": "bundler",
+    "lib": ["es2020"],
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "strict": true,
@@ -16,11 +14,8 @@
     "rootDir": "./",
     "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     },
-    // 🛑 ESTA ES LA ÚNICA LÍNEA QUE FALTA
     "allowImportingTsExtensions": true
   }
 }
