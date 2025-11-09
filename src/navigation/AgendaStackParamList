@@ -1,0 +1,4 @@
+export type AgendaStackParamList = {
+  AgendaScreen: undefined;
+  AgendaDetailsScreen: { id: string }; // si tu pantalla recibe un parámetro llamado id
+};

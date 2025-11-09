@@ -1,9 +1,11 @@
+// Archivo: src/screens/GuideScreen.tsx (BLOQUEO DE VOZ RESTAURADO)
+
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native'; 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import MenuModal from "./../components/MenuModal";
-import { useGuideLogic } from "./../hooks/useGuideLogic";
-import styles from './GuideScreenStyles';
+import MenuModal from "./../components/MenuModal"; 
+import { useGuideLogic } from "./../hooks/useGuideLogic"; 
+import styles from './GuideScreenStyles'; // <-- Importa estilos del nuevo archivo
 
 // ----------------------------------------------------------------------
 // 1. LÓGICA DE TIEMPO Y FORMATO
@@ -18,28 +20,33 @@ const formatTime = (totalSeconds: number): string => {
 // 2. COMPONENTE PRINCIPAL (GuideScreen - Pura Vista)
 // ----------------------------------------------------------------------
 const GuideScreen = () => {
-  const logic = useGuideLogic();
+  // Conexión al Hook:
+  const logic = useGuideLogic(); 
 
   return (
-    <View style={{ flex: 1 }}>
+    <> 
       <MenuModal
         isVisible={logic.isMenuVisible}
-        onClose={() => logic.setIsMenuVisible(false)}
+        onClose={() => logic.setIsMenuVisible(false)} 
         isRunning={logic.isRunning}
         showTimer={logic.showTimer}
         onToggleTimerPause={logic.toggleTimerPause}
         onToggleShowTimer={() => logic.setShowTimer(prev => !prev)}
-        onRepeatInstruction={logic.repeatInstruction}
+        onRepeatInstruction={logic.repeatInstruction} 
         onGoHome={() => logic.navigation.navigate('Home')}
       />
 
       <View style={styles.container}>
+        
         {/* FILA SUPERIOR: TÍTULO y BOTONES */}
         <View style={styles.header}>
           <Text style={styles.phaseTitle}>{logic.headerText}</Text>
-          <View style={styles.headerButtons}>
+          <View style={styles.headerButtons}> 
+            {/** Selección segura de nombres de icono: usa 'arrow-*' si existe en el mapa de glifos, si no cae a 'chevron-*' */}
             {(() => {
               const glyphMap = (MaterialCommunityIcons as any).glyphMap || {};
+              const leftName = glyphMap['arrow-left'] ? 'arrow-left' : 'chevron-left';
+              const rightName = glyphMap['arrow-right'] ? 'arrow-right' : 'chevron-right';
               const homeName = glyphMap['home'] ? 'home' : 'home-outline';
               const menuName = glyphMap['menu'] ? 'menu' : 'dots-vertical';
               const volOn = glyphMap['volume-high'] ? 'volume-high' : 'volume-high';
@@ -66,7 +73,7 @@ const GuideScreen = () => {
             })()}
           </View>
         </View>
-
+        
         {/* CUERPO CENTRAL DE LA GUÍA */}
         <View style={styles.textContainer}>
           <Text style={styles.guideText}>{logic.guideText}</Text>
@@ -77,36 +84,38 @@ const GuideScreen = () => {
             </View>
           )}
         </View>
-
-        {/* CONTENEDOR DE 3 BOTONES EN LA PARTE INFERIOR */}
+        
+        {/* CONTENEDOR DE 3 BOTONES EN LA PARTE INFERIOR (CORREGIDO) */}
         <View style={styles.buttonRowWrapper}>
-          <TouchableOpacity
-            onPress={() => logic.changeStep('prev')}
-            disabled={(logic.currentStepIndex === 0 && !logic.isFinalStep) || logic.isSpeaking}
-            style={[styles.arrowButton, ((logic.currentStepIndex === 0 && !logic.isFinalStep) || logic.isSpeaking) && { opacity: 0.3 }]}
+          <TouchableOpacity 
+            onPress={() => logic.changeStep('prev')} 
+            disabled={(logic.currentStepIndex === 0 && !logic.isFinalStep) || logic.isSpeaking} // BLOQUEADO SI ES INICIO O ESTÁ HABLANDO
+            style={[styles.arrowButton, ((logic.currentStepIndex === 0 && !logic.isFinalStep) || logic.isSpeaking) && { opacity: 0.3 }]} // OPACIDAD SI ESTÁ BLOQUEADO
           >
+            {/* Cambio a chevrons por compatibilidad si faltan los iconos 'arrow-*' */}
             <MaterialCommunityIcons name="chevron-left" size={30} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity
+          <TouchableOpacity 
             onPress={logic.isFinalStep ? logic.resetGuide : () => logic.changeStep('next')}
-            disabled={logic.isSpeaking && !logic.isFinalStep}
+            disabled={logic.isSpeaking && !logic.isFinalStep} // BLOQUEADO SI ESTÁ HABLANDO (y no estamos en la pantalla final de reinicio)
             style={[styles.nextButton, (logic.isSpeaking && !logic.isFinalStep) && { opacity: 0.3 }]}
           >
             <Text style={styles.nextButtonText}>
               {logic.currentStepIndex === 0 ? "INICIAR GUÍA" : logic.isFinalStep ? "REINICIAR GUÍA" : "AVANZAR"}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          <TouchableOpacity 
             onPress={() => logic.changeStep('next')}
-            disabled={logic.isFinalStep || logic.isSpeaking}
-            style={[styles.arrowButton, (logic.isFinalStep || logic.isSpeaking) && { opacity: 0.3 }]}
+            disabled={logic.isFinalStep || logic.isSpeaking} // BLOQUEADO SI ES FINAL O ESTÁ HABLANDO
+            style={[styles.arrowButton, (logic.isFinalStep || logic.isSpeaking) && { opacity: 0.3 }]} // OPACIDAD SI ESTÁ BLOQUEADO
           >
+            {/* Cambio a chevrons por compatibilidad si faltan los iconos 'arrow-*' */}
             <MaterialCommunityIcons name="chevron-right" size={30} color="white" />
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </> 
   );
 };
-
-export default GuideScreen;
+export default GuideScreen; 
+// [Los estilos siguen en GuideScreenStyles.ts]
